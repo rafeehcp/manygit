@@ -19,77 +19,78 @@ real keys.</sub>
 
 ## Install
 
-**macOS — Homebrew:**
-
-```bash
-brew tap rabeeh-ta/manygit
-brew trust rabeeh-ta/manygit
-brew install manygit
-```
-
-Since Homebrew 6, casks from a third-party tap aren't loaded until you trust the
-tap — a cask can run arbitrary Ruby, so Homebrew makes you opt in. `brew trust`
-covers this tap's current and future contents; to trust only manygit and nothing
-else that ever lands here, use `brew trust --cask rabeeh-ta/manygit/manygit`
-instead.
-
-**macOS / Linux — installer script:**
+**Linux**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rabeeh-ta/manygit/main/install.sh | bash
 ```
 
-This drops `manygit` into `~/.local/bin` (adding it to your PATH if needed), so
-you can run `manygit` from anywhere. On each launch it checks for a newer release
-and offers to update itself (`--no-update-check`, or `MANYGIT_NO_UPDATE_CHECK=1`,
-skips that).
+**macOS**
 
-**Windows — installer script:**
+```bash
+brew tap rabeeh-ta/manygit && brew trust rabeeh-ta/manygit && brew install manygit
+```
+
+The Linux command works on macOS too, if you'd rather skip Homebrew.
+
+**Windows**
+
+Paste this into **PowerShell** (the default tab in Windows Terminal). It won't
+work in Command Prompt.
 
 ```powershell
 irm https://raw.githubusercontent.com/rabeeh-ta/manygit/main/install.ps1 | iex
 ```
 
-Drops `manygit.exe` into `%LocalAppData%\manygit\bin` and adds it to your PATH.
-Same self-update behavior as above. Already have bash — Git Bash, MSYS2, Cygwin
-or WSL? `install.sh` detects Windows there too and installs the same binary.
+In Git Bash, MSYS2 or WSL, use the Linux command instead — it installs the same
+`manygit.exe`.
 
-A Homebrew install works differently: Homebrew owns that binary, so manygit never
-replaces it. It tells you a release is out — at most once a day, after you quit —
-and leaves `brew update && brew upgrade --cask manygit` to you. The
-`brew update` is load-bearing: a tap is a git clone that `brew upgrade` alone
-never pulls, so without it brew compares against a stale cask and tells you the
-latest version is already installed.
-
-To install a **specific version** — rolling back, or pinning a machine — pass the
-tag:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/rabeeh-ta/manygit/main/install.sh | bash -s -- v1.0.7
-```
-
-On Windows: `$env:MANYGIT_VERSION = "v1.0.7"; irm .../install.ps1 | iex`.
-
-The self-updater only ever moves *forward*, so a downgrade goes through the
-installer. Since the launch check will then offer to pull you back to the newest
-release, answer `n` or use `--no-update-check` to stay put.
+Then run `manygit`. The installer scripts put the binary on your PATH and manygit
+offers to update itself on launch. A Homebrew or `go install` build is owned by
+that package manager, so manygit only tells you when a release is out and leaves
+`brew update && brew upgrade --cask manygit` to you.
 
 <details>
-<summary>With Go (needs Go 1.24+)</summary>
+<summary>Other ways to install, pinning a version, update details</summary>
+
+**With Go (needs Go 1.24+):**
 
 ```bash
 go install github.com/rabeeh-ta/manygit@latest
 ```
 
-Or from a clone:
+**From source:**
 
 ```bash
 git clone https://github.com/rabeeh-ta/manygit && cd manygit
 go build -o ~/.local/bin/manygit .
 ```
 
-A `go install` build is managed by the Go toolchain, so it behaves like the
-Homebrew one: manygit reports new releases but never replaces itself.
+**A specific version** — rolling back, or pinning a machine — is a matter of
+passing the tag to the installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rabeeh-ta/manygit/main/install.sh | bash -s -- v1.0.7
+```
+
+```powershell
+$env:MANYGIT_VERSION = "v1.0.7"; irm https://raw.githubusercontent.com/rabeeh-ta/manygit/main/install.ps1 | iex
+```
+
+The self-updater only moves *forward*, so a downgrade goes through the installer,
+and the next launch will offer to pull you back to newest — answer `n`, or start
+with `--no-update-check` (or `MANYGIT_NO_UPDATE_CHECK=1`) to stay put.
+
+**Where things go:** `install.sh` puts `manygit` in `~/.local/bin`; `install.ps1`
+puts `manygit.exe` in `%LocalAppData%\manygit\bin`. Both add that directory to
+your PATH if needed.
+
+**Why `brew trust`:** since Homebrew 6, casks from a third-party tap aren't loaded
+until you trust the tap, because a cask can run arbitrary Ruby. `brew trust
+--cask rabeeh-ta/manygit/manygit` trusts only manygit rather than the whole tap.
+When upgrading, the `brew update` matters: a tap is a git clone that
+`brew upgrade` alone never pulls, so without it brew reports the stale version
+as current.
 </details>
 
 ## Usage
