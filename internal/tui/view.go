@@ -401,9 +401,13 @@ func overlayTabs(onKeys bool) string {
 // box exactly, so an extra line would clip the footer. Keeping "esc close" up here
 // also means it survives the height clamp on the un-windowed keys face.
 func (m Model) overlayHead() []string {
+	hint := ""
+	if !m.lastEscape.IsZero() {
+		hint = styleYellow.Render("Press Esc again to quit")
+	}
 	return []string{
 		overlayTabs(m.showKeys) + styleDim.Render("   tab · [ ] switch · esc close"),
-		"",
+		hint,
 	}
 }
 
@@ -823,10 +827,13 @@ func (m Model) footer() string {
 		}
 	}
 	return styleDim.Render(
-		enter + " | z zoom | g graph | n news | t tags | F changed | s sync | p push | d/D discard | o open | r refetch | ! shell | : ai | ? help | q quit")
+		enter + " | z zoom | g graph | n news | t tags | F changed | s sync | p push | d/D discard | o open | r refetch | ! shell | : ai | ? help | q/esc esc quit")
 }
 
 func (m Model) statusOrFilterLine() string {
+	if !m.lastEscape.IsZero() {
+		return styleYellow.Render("Press Esc again to quit")
+	}
 	if m.shellPrompting {
 		return m.shellPromptLine()
 	}
@@ -1297,6 +1304,7 @@ func (m Model) keysColumns() (leftCol, rightCol []string) {
 		kr("j/k", "scroll this page"),
 		kr("esc", "close this overlay"),
 		kr("q", "quit manygit"),
+		kr("esc esc", "quit within 500 ms; any other key resets"),
 		"",
 		styleGroup.Render("Status column"),
 		kr(styleGreen.Render("ok"), "up to date with upstream"),

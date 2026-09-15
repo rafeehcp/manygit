@@ -390,6 +390,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		// Keep reading even a superseded run so its process drains and exits.
 		return m, readScriptLine(msg.scanner, msg.run)
+	case escapeExpireMsg:
+		if m.lastEscape.Equal(msg.pressedAt) {
+			m.lastEscape = time.Time{}
+		}
+		return m, nil
 	case statusExpireMsg:
 		if msg.gen == m.statusGen {
 			m.statusLine = ""
@@ -580,7 +585,31 @@ func (m *Model) appendOutput(line string) {
 	}
 }
 
+const doubleEscapeWindow = 500 * time.Millisecond
+
 func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	return m.handleKeyAt(msg, time.Now())
+}
+
+// Keep the clock explicit so the double-Escape boundary can be tested without sleeps.
+func (m Model) handleKeyAt(msg tea.KeyMsg, now time.Time) (tea.Model, tea.Cmd) {
+	if msg.String() == "esc" {
+		if !m.lastEscape.IsZero() && now.Sub(m.lastEscape) >= 0 && now.Sub(m.lastEscape) <= doubleEscapeWindow {
+			return m, tea.Quit
+		}
+		m.lastEscape = now
+		next, cmd := m.handleSingleKey(msg)
+		expire := tea.Tick(doubleEscapeWindow, func(time.Time) tea.Msg {
+			return escapeExpireMsg{pressedAt: now}
+		})
+		return next, tea.Batch(cmd, expire)
+	} else {
+		m.lastEscape = time.Time{}
+	}
+	return m.handleSingleKey(msg)
+}
+
+func (m Model) handleSingleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.filtering {
 		return m.handleFilterKey(msg)
 	}
