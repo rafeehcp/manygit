@@ -401,9 +401,13 @@ func overlayTabs(onKeys bool) string {
 // box exactly, so an extra line would clip the footer. Keeping "esc close" up here
 // also means it survives the height clamp on the un-windowed keys face.
 func (m Model) overlayHead() []string {
+	hint := ""
+	if !m.lastEscape.IsZero() {
+		hint = styleYellow.Render("Press Esc again to quit")
+	}
 	return []string{
 		overlayTabs(m.showKeys) + styleDim.Render("   tab · [ ] switch · esc close"),
-		"",
+		hint,
 	}
 }
 
@@ -827,6 +831,9 @@ func (m Model) footer() string {
 }
 
 func (m Model) statusOrFilterLine() string {
+	if !m.lastEscape.IsZero() {
+		return styleYellow.Render("Press Esc again to quit")
+	}
 	if m.shellPrompting {
 		return m.shellPromptLine()
 	}

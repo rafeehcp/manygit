@@ -1,11 +1,56 @@
 package tui
 
 import (
+	"strings"
 	"testing"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+func TestDoubleEscapeFooterHint(t *testing.T) {
+	at := time.Now()
+	esc := tea.KeyMsg{Type: tea.KeyEsc}
+	next, expire := (Model{statusLine: "fetch complete"}).handleKeyAt(esc, at)
+	m := next.(Model)
+	if got := stripANSI(m.statusOrFilterLine()); got != "Press Esc again to quit" {
+		t.Fatalf("first Escape footer = %q", got)
+	}
+	if expire == nil {
+		t.Fatal("first Escape must schedule a redraw when the hint expires")
+	}
+	msg := expire()
+	if _, ok := msg.(escapeExpireMsg); !ok {
+		t.Fatalf("expiration command returned %T", msg)
+	}
+	next, _ = m.Update(msg)
+	if got := stripANSI(next.(Model).statusOrFilterLine()); got != "fetch complete" {
+		t.Fatalf("expiration should restore the existing status, got %q", got)
+	}
+
+	// A stale timer cannot clear a newer press or its hint.
+	next, _ = m.handleKeyAt(esc, at.Add(time.Second))
+	next, _ = next.(Model).Update(msg)
+	if !strings.Contains(next.(Model).statusOrFilterLine(), "Press Esc again to quit") {
+		t.Fatal("stale expiration cleared the new hint")
+	}
+	next, _ = next.(Model).handleKeyAt(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")}, at.Add(time.Second+time.Millisecond))
+	if strings.Contains(next.(Model).statusOrFilterLine(), "Press Esc again to quit") {
+		t.Fatal("another key should clear the hint immediately")
+	}
+}
+
+func TestDoubleEscapeHintWhileSettingsRemainOpen(t *testing.T) {
+	m := Model{showHelp: true, editingOpenCmd: true, width: 120, height: 40}
+	next, _ := m.handleKeyAt(tea.KeyMsg{Type: tea.KeyEsc}, time.Now())
+	m = next.(Model)
+	if !m.showHelp || m.editingOpenCmd {
+		t.Fatal("first Escape should close only the editor setting input")
+	}
+	if !strings.Contains(m.View(), "Press Esc again to quit") {
+		t.Fatal("settings must show the quit hint while the overlay remains open")
+	}
+}
 
 func escapeKeyAt(m Model, key tea.KeyMsg, at time.Time) (Model, bool) {
 	next, cmd := m.handleKeyAt(key, at)

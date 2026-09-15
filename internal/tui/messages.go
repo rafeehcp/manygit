@@ -3,12 +3,18 @@ package tui
 import (
 	"bufio"
 	"context"
+	"time"
 
 	"github.com/rabeeh-ta/manygit/internal/discover"
 	"github.com/rabeeh-ta/manygit/internal/gh"
 	"github.com/rabeeh-ta/manygit/internal/git"
 	"github.com/rabeeh-ta/manygit/internal/selfupdate"
 )
+
+// escapeExpireMsg identifies the press whose quit hint should expire.
+type escapeExpireMsg struct {
+	pressedAt time.Time
+}
 
 type statusMsg struct {
 	path string

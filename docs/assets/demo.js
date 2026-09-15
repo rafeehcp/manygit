@@ -1031,6 +1031,7 @@
     return line;
   }
   function statusOrFilter() {
+    if (lastEscape !== null) return yl("Press Esc again to quit");
     if (S.shellPrompting) return shellPromptLine();
     if (S.aiPrompting) return aiPromptLine();
     if (S.filtering) return yl("/" + S.filter + "_");
@@ -1150,7 +1151,7 @@
   // supported size, so an extra line would clip the footer (view.go says the same).
   function overlayHead() {
     return "<div>" + overlayTabs(S.showKeys) + d("   tab · [ ] switch · esc close") +
-      "</div><div>&nbsp;</div>";
+      "</div><div>" + (lastEscape !== null ? yl("Press Esc again to quit") : "&nbsp;") + "</div>";
   }
 
   // The tab bar sits inside #term, which is rebuilt wholesale on every keystroke,
@@ -2186,6 +2187,9 @@
         return;
       }
       lastEscape = now;
+      setTimeout(function () {
+        if (lastEscape === now) { lastEscape = null; render(); }
+      }, 500);
     } else {
       lastEscape = null;
     }
